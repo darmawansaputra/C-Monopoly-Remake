@@ -1,0 +1,52 @@
+# Project: Monopoly
+# Makefile created by Dev-C++ 5.11
+
+CPP      = g++.exe
+CC       = gcc.exe
+WINDRES  = windres.exe
+OBJ      = Main.o Player.o Map.o Dice.o Gameplay.o Place.o Response.o Card.o Helper.o
+LINKOBJ  = Main.o Player.o Map.o Dice.o Gameplay.o Place.o Response.o Card.o Helper.o
+LIBS     = -L"E:/Program Files/Dev-Cpp/MinGW64/lib" -L"E:/Program Files/Dev-Cpp/MinGW64/x86_64-w64-mingw32/lib" -static-libgcc
+INCS     = -I"E:/Program Files/Dev-Cpp/MinGW64/include" -I"E:/Program Files/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"E:/Program Files/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include"
+CXXINCS  = -I"E:/Program Files/Dev-Cpp/MinGW64/include" -I"E:/Program Files/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"E:/Program Files/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include" -I"E:/Program Files/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include/c++"
+BIN      = Monopoly.exe
+CXXFLAGS = $(CXXINCS) 
+CFLAGS   = $(INCS) 
+RM       = rm.exe -f
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before $(BIN) all-after
+
+clean: clean-custom
+	${RM} $(OBJ) $(BIN)
+
+$(BIN): $(OBJ)
+	$(CPP) $(LINKOBJ) -o $(BIN) $(LIBS)
+
+Main.o: Main.cpp
+	$(CPP) -c Main.cpp -o Main.o $(CXXFLAGS)
+
+Player.o: Player.cpp
+	$(CPP) -c Player.cpp -o Player.o $(CXXFLAGS)
+
+Map.o: Map.cpp
+	$(CPP) -c Map.cpp -o Map.o $(CXXFLAGS)
+
+Dice.o: Dice.cpp
+	$(CPP) -c Dice.cpp -o Dice.o $(CXXFLAGS)
+
+Gameplay.o: Gameplay.cpp
+	$(CPP) -c Gameplay.cpp -o Gameplay.o $(CXXFLAGS)
+
+Place.o: Place.cpp
+	$(CPP) -c Place.cpp -o Place.o $(CXXFLAGS)
+
+Response.o: Response.cpp
+	$(CPP) -c Response.cpp -o Response.o $(CXXFLAGS)
+
+Card.o: Card.cpp
+	$(CPP) -c Card.cpp -o Card.o $(CXXFLAGS)
+
+Helper.o: Helper.cpp
+	$(CPP) -c Helper.cpp -o Helper.o $(CXXFLAGS)
