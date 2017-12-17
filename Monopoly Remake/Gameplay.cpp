@@ -193,7 +193,7 @@ void Gameplay::initializePlayers() {
 	doOrderPlayer();
 	
 	//Init player
-	Player p1(1, 106, 42, 176, -1, ':');
+	Player p1(1, 106, 42, 176, 200000, ':');
 	Player p2(2, 107, 42, 177, 200000, '*');
 	Player p3(3, 108, 42, 178, 200000, '@');
 	Player p4(4, 109, 42, 219, 200000, '!');
@@ -392,7 +392,7 @@ void Gameplay::showPlayerProfile(Player player) {
 int Gameplay::generateDialog(Player* player) {
 	string dialog = "";
 	stringstream ss;
-	player->currentPlaceIndex = 1;
+	//player->currentPlaceIndex = 1;
 	
 	int id = player->currentPlaceIndex;
 	//id = 1;
