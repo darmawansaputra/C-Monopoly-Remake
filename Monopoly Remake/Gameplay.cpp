@@ -30,10 +30,13 @@ void Gameplay::nextPlayerTurn() {
 	sameDice = 0;
 	
 	//Switch to next
-	currentPlayerIndex++;
 	
-	if(currentPlayerIndex > totalPlayer - 1)
-		currentPlayerIndex = 0; //Reset
+	do {
+		currentPlayerIndex++;
+		if(currentPlayerIndex > totalPlayer - 1)
+			currentPlayerIndex = 0; //Reset
+	}
+	while(!players.at(currentPlayerIndex).isActive);
 }
 
 void Gameplay::changePlayerPosition(int* res, Player* player) {
@@ -190,7 +193,7 @@ void Gameplay::initializePlayers() {
 	doOrderPlayer();
 	
 	//Init player
-	Player p1(1, 106, 42, 176, 200000, ':');
+	Player p1(1, 106, 42, 176, -1, ':');
 	Player p2(2, 107, 42, 177, 200000, '*');
 	Player p3(3, 108, 42, 178, 200000, '@');
 	Player p4(4, 109, 42, 219, 200000, '!');
@@ -378,8 +381,8 @@ Place Gameplay::getPlace(int index) {
 	return places.at(index);
 }
 
-Player Gameplay::getPlayer(int index) {
-	return players.at(index);
+Player* Gameplay::getPlayer(int index) {
+	return &players.at(index);
 }
 
 void Gameplay::showPlayerProfile(Player player) {
@@ -388,6 +391,7 @@ void Gameplay::showPlayerProfile(Player player) {
 
 int Gameplay::generateDialog(Player* player) {
 	string dialog = "";
+	stringstream ss;
 	player->currentPlaceIndex = 1;
 	
 	int id = player->currentPlaceIndex;
@@ -470,16 +474,17 @@ int Gameplay::generateDialog(Player* player) {
 			else if(p->isHipotik) {
 				//Jika tanah sendiri
 				if(p->owner == player->id) {
-					dialog = "1. Bayar uang hipotik\n";
+					ss<<"1. Bayar uang hipotik ($"<<p->buildPrices[3] + 0.1 * p->buildPrices[3]<<")\n";
 				}
 				
 				//Jika punya orang lain
 				else {
-					dialog = "1. Akuisisi rumah yang digadaikan\n";
+					ss<<"1. Akuisisi rumah yang digadaikan ($"<<p->buildPrices[3] + 0.2 * p->buildPrices[3]<<")\n";
 				}
 				
 				max = 2;
 				act = 9;
+				n++;
 			}
 			
 			//Jika tanah milik kita
@@ -510,7 +515,6 @@ int Gameplay::generateDialog(Player* player) {
 			act = 99;
 		}
 		
-		stringstream ss;
 		ss<<n<<". Akhiri giliran";
 		dialog.append(ss.str());
 	}
@@ -556,7 +560,7 @@ void Gameplay::doAction(int type, int pil, bool after, Player* pl) {
 			if(c.action == 6 || c.action == 7 || c.action == 8 || c.action == 9) {
 				system("cls");
 				PrintMap(places.at(pl->currentPlaceIndex).building == 1, places.at(pl->currentPlaceIndex));
-				showPlayerStat(*pl);
+				showPlayerStat(pl);
 				
 				generateDialog(pl);
 			}
@@ -615,6 +619,40 @@ void Gameplay::doAction(int type, int pil, bool after, Player* pl) {
 		else if((type == 6 || type == 7) && pil == 1) {
 			p->buildOrUpgrade(pl);
 		}
+		//Proses bayar hipotik atau akuisisi
+		else if(type == 9 && pil == 1) {
+			int h = 0;
+			//Bayar hipotik
+			if(pl->id == p->owner) {
+				h = p->buildPrices[3] + 0.1 * p->buildPrices[3];
+			}
+			
+			//Akuisisi
+			else {
+				h = p->buildPrices[3] + 0.2 * p->buildPrices[3];
+			}
+			
+			if(pl->money < h) {
+				cout<<"Maaf tidak dapat melakukan aksi tersebut";
+				return;
+			}
+			
+			if(pl->id == p->owner) {
+				p->isHipotik = false;
+				pl->updateMoney(-h);
+				
+				cout<<"Proses pembayaran pegadaian berhasil, sisa uang $"<<pl->money<<endl;
+			}
+			else {
+				p->isHipotik = false;
+				pl->updateMoney(-h);
+				p->owner = pl->id;
+				
+				cout<<"Proses pembayaran akuisisi berhasil, sisa uang $"<<pl->money<<endl;
+			}
+			
+			system("pause");
+		}
 		//Parkir bebas
 		else if(type == 3 && pil == 1) {
 			cout<<"\nDaftar tujuan parkir:\n";
@@ -636,7 +674,7 @@ void Gameplay::doAction(int type, int pil, bool after, Player* pl) {
 				c.moveAction(pil - 1, places, currentPlayerIndex, pl);
 				system("cls");
 				PrintMap(places.at(pl->currentPlaceIndex).building == 1, places.at(pl->currentPlaceIndex));
-				showPlayerStat(*pl);
+				showPlayerStat(pl);
 				
 				generateDialog(pl);
 			}
@@ -707,7 +745,7 @@ int* Gameplay::securityProcess(Player* player) {
 	return res;
 }
 
-void Gameplay::showPlayerStat(Player p) {
+void Gameplay::showPlayerStat(Player* p) {
 	ofstream file;
 	file.open("temp.txt", ios::app);
 	
@@ -715,17 +753,17 @@ void Gameplay::showPlayerStat(Player p) {
 	file<<"\nGILIRAN PEMAIN KE: "<<currentPlayerIndex + 1<<"\n";
 	
 	//Profile
-	cout<<"SISA UANG PEMAIN: $"<<p.money<<"\n";
-	file<<"SISA UANG PEMAIN: $"<<p.money<<"\n";
+	cout<<"SISA UANG PEMAIN: $"<<p->money<<"\n";
+	file<<"SISA UANG PEMAIN: $"<<p->money<<"\n";
 	
 	cout<<"PETAK YANG DIMILIKI:\n";
 	file<<"PETAK YANG DIMILIKI:\n";
 	
-	for(int i = 0; i < p.idPlaces.size(); i++) {
-		cout<<places.at(p.idPlaces.at(i)).name;
-		file<<places.at(p.idPlaces.at(i)).name;
+	for(int i = 0; i < p->idPlaces.size(); i++) {
+		cout<<places.at(p->idPlaces.at(i)).name;
+		file<<places.at(p->idPlaces.at(i)).name;
 		
-		if(i < p.idPlaces.size() - 1) {
+		if(i < p->idPlaces.size() - 1) {
 			cout<<" // ";
 			file<<" // ";
 		}
@@ -747,20 +785,27 @@ void Gameplay::helper(string s) {
 	else if(s.compare("/surrender") == 0) {
 		char res;
 		
-		cout<<"Apakah anda yakin ingin menyerah ? (Y/N)";
+		cout<<"Apakah anda yakin ingin menyerah (Y/N)? : ";
 		cin>>res;
 		
 		if(res == 'Y') {
-			p->isActive = false;
+			playerLose(currentPlayerIndex);
+			cout<<"\nPlayer "<<currentPlayerIndex + 1<<" telah menyerah dari permaianan\n";
+			system("pause");
 		}
 	}
-	else if(s.compare("/info") == 0 || s.compare("/sell") == 0 || s.compare("/hipotik") == 0) {
-		int i = 0;
-		for(i; i < p->idPlaces.size(); i++) {
+	else if(s.compare("/info") == 0 || s.compare("/sell") == 0 || s.compare("/hipotik") == 0 || s.compare("/pay") == 0) {
+		int n = 1;
+		for(int i = 0; i < p->idPlaces.size(); i++) {
 			int t = places.at(p->idPlaces.at(i)).type;
+			bool hip = places.at(p->idPlaces.at(i)).isHipotik;
 			
-			cout<<i + 1<<". "<<places.at(p->idPlaces.at(i)).name<<" (";
+			if(s.compare("/info") == 0 || (s.compare("/sell") == 0 && !hip) || (s.compare("/hipotik") == 0 && !hip) || (s.compare("/pay") == 0 && hip))
+				cout<<n<<". "<<places.at(p->idPlaces.at(i)).name;
+			else
+				continue;
 			
+			cout<<" (";
 			if(t < 1)
 				cout<<"Hanya tanah";
 			else if(t > 1 && t < 6)
@@ -768,23 +813,44 @@ void Gameplay::helper(string s) {
 			else
 				cout<<"1 Hotel";
 			
-			cout<<")\n";
+			cout<<")";
+			
+			if(hip && s.compare("/pay") != 0) {
+				cout<<" (Sedang digadaikan)";
+			}
+			
+			cout<<"\n";
+			
+			n++;
 		}
 		
 		if(p->idPlaces.size() < 1)
 			cout<<"Anda masih belum memiliki petak\n";
 		else if(s.compare("/info") != 0)
-			cout<<++i<<". Batal";
+			cout<<n<<". Batal";
 			
 		
 		int pil;
 		
 		char res;
 		if(p->idPlaces.size() > 0 && s.compare("/sell") == 0) {
-			pil = Helper::inputValidate(i, "Pilih petak yang ingin dijual: ");
+			pil = Helper::inputValidate(n, "Pilih petak yang ingin dijual: ");
 		
-			if(pil != i) {
-				Place* pl = &places.at(p->idPlaces.at(pil - 1));
+			if(pil != n) {
+				Place* pl;
+				int c = 0;
+				for(int j = 0; j < p->idPlaces.size(); j++) {
+					if(places.at(p->idPlaces.at(pil - 1)).isHipotik)
+						continue;
+					else
+						c++;
+						
+					if(pil == c) {
+						pl = &places.at(p->idPlaces.at(j));
+						break;
+					}
+				}
+				
 				int harga = pl->buildPrices[0];
 				if(pl->type > 1 && pl->type < 6)
 					harga += pl->buildPrices[1] * (pl->type - 1);
@@ -805,10 +871,23 @@ void Gameplay::helper(string s) {
 			}
 		}
 		else if(p->idPlaces.size() > 0 && s.compare("/hipotik") == 0) {
-			pil = Helper::inputValidate(i, "Pilih petak yang ingin digadaikan: ");
+			pil = Helper::inputValidate(n, "Pilih petak yang ingin digadaikan: ");
 			
-			if(pil != i) {
-				Place* pl = &places.at(p->idPlaces.at(pil - 1));
+			if(pil != n) {
+				Place* pl;
+				int c = 0;
+				for(int j = 0; j < p->idPlaces.size(); j++) {
+					if(places.at(p->idPlaces.at(pil - 1)).isHipotik)
+						continue;
+					else
+						c++;
+						
+					if(pil == c) {
+						pl = &places.at(p->idPlaces.at(j));
+						break;
+					}
+				}
+				
 				int harga = pl->buildPrices[3];
 				
 				cout<<"\nAnda akan menggadaikan petak ini dan mendapatkan $"<<harga<<", anda tidak dapat memungut harga sewa dari petak yang digadaikan sampai anda mengembailikan sebesar $"<<harga + 0.1 * harga<<endl;
@@ -824,5 +903,75 @@ void Gameplay::helper(string s) {
 				}
 			}
 		}
+		else if(p->idPlaces.size() > 0 && s.compare("/pay") == 0) {
+			pil = Helper::inputValidate(n, "Pilih petak yang ingin dibayar: ");
+			
+			if(pil != n) {
+				Place* pl;
+				int c = 0;
+				for(int j = 0; j < p->idPlaces.size(); j++) {
+					if(!places.at(p->idPlaces.at(pil - 1)).isHipotik)
+						continue;
+					else
+						c++;
+						
+					if(pil == c) {
+						pl = &places.at(p->idPlaces.at(j));
+						break;
+					}
+				}
+				
+				int harga = pl->buildPrices[3] + 0.1 * pl->buildPrices[3];
+				
+				cout<<"\nHarga pelunasan hipotik petak ini sebesar $"<<harga<<endl;
+				cout<<"Apakah anda yakin ingin membayar petak ini? (Y/N): ";
+				cin>>res;
+				
+				if(res == 'Y') {
+					if(p->money < harga) {
+						cout<<"\nUang anda tidak cukup untuk melunasi hipotik"<<endl;
+					}
+					else {
+						p->updateMoney(-harga);
+						pl->isHipotik = false;
+					
+						cout<<"\nPelunasan hipotik petak berhasil, sisa uang anda $"<<p->money<<endl;
+					}
+				}
+			}
+		}
 	}
+}
+
+void Gameplay::playerLose(int index) {
+	Player* p = &players.at(index);
+	currentTotalPlayer--;
+	p->isActive = false;
+	ChangeMap(p->x, p->y, ' '); //Hapus tandanya
+	
+	for(int i = 0; i < p->idPlaces.size(); i++) {
+		places.at(p->idPlaces.at(i)).sell();
+		p->idPlaces.erase(p->idPlaces.begin());
+	}
+}
+
+void Gameplay::printTheWinner() {
+	int n;
+	for(int i = 0; i < players.size(); i++) {
+		if(players.at(i).isActive)
+			n = i;
+	}
+	
+	cout<<"================================================================================\n\n";
+	cout<<"================================================================================\n\n";
+	cout<<"================================================================================\n\n";
+	cout<<"========================= SELAMAT PEMENANGNYA: PLAYER "<<n + 1<<" ========================\n\n";
+	cout<<"================================================================================\n\n";
+	cout<<"================================================================================\n\n";
+	cout<<"================================================================================";
+}
+
+void Gameplay::moneyDown() {
+	cout<<"\n[WARNING]\nUang anda dibawah $0 dan tidak dapat melanjutkan permainan, sistem menyarankan anda untuk mengetikkan salah satu aksi dibawah: \n";
+	cout<<"/sell\t\t = Menjual petak yang dimiliki\n/hipotik\t = Menggadaikan petak yang dimiliki\n/surrender\t = Menyerah dari permainan jika sudah tidak memiliki aset lagi\n";
 }

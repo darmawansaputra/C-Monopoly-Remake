@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
 		//printTemp();
 		
 		//Current player
-		Player player = sys.getPlayer(sys.currentPlayerIndex);
+		Player* player = sys.getPlayer(sys.currentPlayerIndex);
 		
 		/*
 			DATA PEMAIN
@@ -72,76 +72,89 @@ int main(int argc, char** argv) {
 		int* res;
 		
 		//Jika tidak tercyduk
-		if(!player.isTercyduk) {
+		if(!player->isTercyduk) {
 			do {
+				if(player->money < 0)
+					sys.moneyDown();
+					
 				cout<<"\nKetik sembarang utk mengocok dadu: ";
 				cin>>str;
 				
-				if(str.compare("/help") == 0 || str.compare("/surrender") == 0 || str.compare("/hipotik") == 0 || str.compare("/info") == 0 || str.compare("/sell") == 0) {
+				if(str.compare("/help") == 0 || str.compare("/surrender") == 0 || str.compare("/hipotik") == 0 || str.compare("/info") == 0 || str.compare("/sell") == 0 || str.compare("/pay") == 0) {
 					sys.helper(str);
 				}
+				
+				if(str.compare("/surrender") == 0 && !player->isActive)
+					break;
 			}
-			while(str.compare("/help") == 0 || str.compare("/surrender") == 0 || str.compare("/hipotik") == 0 || str.compare("/info") == 0 || str.compare("/sell") == 0);
+			while(player->money < 0 || str.compare("/help") == 0 || str.compare("/surrender") == 0 || str.compare("/hipotik") == 0 || str.compare("/info") == 0 || str.compare("/sell") == 0 || str.compare("/pay") == 0);
 			
-			res = dice.shake(sys.currentPlayerIndex, player.money);
+			if(!player->isActive) {
+				sys.nextPlayerTurn();
+				clearTemp();
+				clearScreen();
+				continue;
+			}
+			
+			res = dice.shake(sys.currentPlayerIndex, player->money);
 		}
 		else
-			res = sys.securityProcess(&player);
+			res = sys.securityProcess(player);
 		
-		if(!player.isTercyduk) {
+		if(!player->isTercyduk) {
 			//Proses perpindahan
-			ChangeMap(player.x, player.y, ' '); //Hapus dulu tandanya
+			ChangeMap(player->x, player->y, ' '); //Hapus dulu tandanya
 		}
 		
-		if(!player.isTercyduk && res[0] == res[1]) {
+		if(!player->isTercyduk && res[0] == res[1]) {
 			sys.sameDice++;
 			
 			if(sys.sameDice == 3) {
-				player.isTercyduk = true;
-				player.currentPlaceIndex = 10;
+				player->isTercyduk = true;
+				player->currentPlaceIndex = 10;
 				
 				//Change player position
 				res[0] = 0;
 				res[1] = 0;
-				sys.changePlayerPosition(res, &player);
+				sys.changePlayerPosition(res, player);
 				
 				//Proses perpindahan
-				ChangeMap(player.x, player.y, player.identification); //Tambah tanda player
+				ChangeMap(player->x, player->y, player->identification); //Tambah tanda player
 				
 				cout<<"\nAnda ditahan di pos satpam karena terlalu hoki dalam mengocok dadu\n";
 				system("pause");
 			}
 		}
 		
-		if(!player.isTercyduk) {			
+		if(!player->isTercyduk) {			
 			//Change player position
-			sys.changePlayerPosition(res, &player);
+			sys.changePlayerPosition(res, player);
 			
 			//Proses perpindahan
-			ChangeMap(player.x, player.y, player.identification); //Tambah tanda player
+			ChangeMap(player->x, player->y, player->identification); //Tambah tanda player
 			
 			//Clear screen
 			clearScreen();
 			
 			//Printing map
-			int p = player.currentPlaceIndex;
-			PrintMap(sys.places.at(p).building == 1, sys.places.at(player.currentPlaceIndex));
+			int p = player->currentPlaceIndex;
+			PrintMap(sys.places.at(p).building == 1, sys.places.at(player->currentPlaceIndex));
 			
 			//Print temp
 			printTemp();
 			
 			//Generate action of place
-			int act = sys.generateDialog(&player);
+			int act = sys.generateDialog(player);
 		}
 			
 		//Save ke array
-		sys.savePlayer(sys.currentPlayerIndex, player);
+		//sys.savePlayer(sys.currentPlayerIndex, player);
 		
 		//Clear screen
 		clearScreen();
 		
 		//Kondisi dimana jika 2 mata dadu sama
-		if(res[0] == res[1] && !player.isTercyduk) {
+		if(res[0] == res[1] && !player->isTercyduk) {
 			continue;
 		}
 				
@@ -151,6 +164,9 @@ int main(int argc, char** argv) {
 		//Berpindah ke pemain berikutnya
 		sys.nextPlayerTurn();
 	}
+	
+	//Who is the winner?
+	sys.printTheWinner();
 	
 	return 0;
 }

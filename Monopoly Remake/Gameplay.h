@@ -28,13 +28,16 @@ class Gameplay {
 		void savePlayer(int index, Player player);
 		void changePlayerPosition(int* res, Player* player);
 		Place getPlace(int index);
-		Player getPlayer(int index);
+		Player* getPlayer(int index);
 		int generateDialog(Player* player);
 		void showPlayerProfile(Player player);
 		void doAction(int type, int pil, bool after, Player *p);
 		int* securityProcess(Player* player);
-		void showPlayerStat(Player p);
+		void showPlayerStat(Player* p);
 		void helper(string s);
+		void printTheWinner();
+		void moneyDown();
+		void playerLose(int index);
 		
 	private:
 		void initializePlaces();
