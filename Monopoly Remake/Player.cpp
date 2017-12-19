@@ -10,7 +10,7 @@ Player::Player(int _id, int _x, int _y, int _symbol, float _money, char _c) {
 	money = _money;
 	identification = _c;
 	currentPlaceIndex = 0;
-	totalLap = 1;
+	totalLap = 0;
 	isActive = true;
 	isTercyduk = false;
 	hasSecurityCard = false;
